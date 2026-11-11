@@ -1,0 +1,50 @@
+assert(is_win)
+
+source_set("hooks") {
+  sources = [
+    "ac_content_hooks.h",
+    "ac_hooks.h",
+  ]
+
+  deps = [
+    "//base",
+    "//chrome/browser",
+    "//chrome/browser/extensions",
+    "//components/permissions",
+    "//content/public/browser",
+    "//extensions/browser",
+    "//extensions/common",
+    "//ui/base",
+  ]
+}
+
+source_set("launch_switches") {
+  sources = [
+    "ac_launch_switches.cc",
+    "ac_launch_switches.h",
+  ]
+
+  deps = [
+    "//base",
+    "//chrome/common:non_code_constants",
+    "//components/os_crypt/common:switches",
+    "//content/public/common",
+  ]
+}
+
+static_library("core") {
+  sources = [ "ac_stubs.cc" ]
+
+  deps = [
+    ":hooks",
+    ":launch_switches",
+    "//base",
+    "//chrome/browser",
+    "//chrome/browser/extensions",
+    "//components/permissions",
+    "//content/public/browser",
+    "//extensions/browser",
+    "//extensions/common",
+    "//ui/base",
+  ]
+}

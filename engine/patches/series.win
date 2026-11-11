@@ -1,0 +1,78 @@
+# Windows Ardia skeleton series for Chromium 157 plus helium-windows.
+# The order Ardia's changes go into the Chromium tree (docs/engine-build.md > "The patch series").
+# Delta from series: eight macOS-only patches are omitted: devtools-redock-display, safe-storage-name,
+# safe-storage-no-silent-reset, video-super-resolution, keep-old-frame-on-swap, angle-metal-shader-cache,
+# background-instance-no-default-handlers and apple-passwords-host-skipped.
+# video-super-resolution is replaced by a .win variant retaining its nine portable, macOS-gated compositor files.
+# helium-branding, cef-carryover and window-hosted also use .win variants without their Mac-only or embedder-only hunks.
+# chromium <patch> applies to chromium/src; layer <dir> runs <dir>/apply.sh, which delegates to apply-win.sh.
+# The Windows layers replace engine/chromium and engine/ardiacore at the same two layer positions.
+
+chromium chromium-helium-branding.win.patch
+chromium chromium-cef-carryover.win.patch
+chromium chromium-autofill-address-bubble-window.patch
+chromium chromium-device-chooser-hook.patch
+chromium chromium-media-access-hook.patch
+chromium chromium-cast-dialog-hook.patch
+chromium chromium-side-panel-hook.patch
+chromium chromium-ntp-promo-without-side-panel.patch
+chromium chromium-storage-pressure-bubble-without-browser-view.patch
+chromium chromium-remoting-dialog-without-browser-view.patch
+chromium chromium-action-open-popup-without-active-tab.patch
+chromium chromium-initial-document-access.patch
+chromium chromium-hidden-window-current-window.patch
+chromium chromium-devtools-window-title.patch
+chromium chromium-global-trace-id-64bit.patch
+chromium chromium-drag-start-event-id.patch
+chromium chromium-devtools-control-token.patch
+chromium chromium-capture-wake-lock-awake-only.patch
+chromium chromium-devtools-find-detach-keeps-selection.patch
+chromium chromium-extension-install-prompt-hook.patch
+chromium chromium-webstore-direct.patch
+chromium chromium-extension-updates.patch
+chromium chromium-component-updater-security-only.patch
+chromium chromium-extension-omaha-attributes.patch
+chromium chromium-extension-management-policy-hook.patch
+chromium chromium-extension-sync-installer-hook.patch
+chromium chromium-unpacked-load-path-hook.patch
+chromium chromium-extension-window-hidden.patch
+chromium chromium-active-web-contents-without-active-tab.patch
+chromium chromium-tpm-metrics-off.patch
+chromium chromium-component-extension-restricted-urls.patch
+chromium chromium-component-extension-disk-messages.patch
+chromium chromium-helium-ublock-off.patch
+chromium chromium-helium-onboarding-off.patch
+chromium chromium-helium-services-page-off.patch
+chromium chromium-helium-search-assets-off.patch
+chromium chromium-helium-bangs-off.patch
+chromium chromium-helium-rlz-for-cdm-storage-id.patch
+chromium chromium-helium-ntp-third-party.patch
+chromium chromium-helium-context-menu-cast.patch
+chromium chromium-helium-devtools-inspect-shortcut.patch
+chromium chromium-neterror-game.patch
+chromium chromium-branding.patch
+chromium chromium-password-bubble-hook.patch
+chromium chromium-password-generation-local.patch
+chromium chromium-password-string-erase.patch
+chromium chromium-os-crypt-decrypt-erase.patch
+chromium chromium-window-docked-devtools.patch
+chromium chromium-window-hosted.win.patch
+chromium chromium-extension-installed-bubble.patch
+chromium chromium-pip-overlay-window.patch
+chromium chromium-tab-sharing-capturer.patch
+chromium chromium-desktop-capture-window-audio.patch
+chromium chromium-freeze-spares-live-connections.patch
+chromium chromium-temporary-tab-restore-hook.patch
+chromium chromium-hosted-browsers-no-session-service.patch
+chromium chromium-auto-pip-global-switch.patch
+chromium chromium-media-session-main-frame-handler.patch
+chromium chromium-pip-user-agent-ignores-page-opt-out.patch
+chromium chromium-widevine-without-cdm.patch
+chromium chromium-ungoogled-disable-default-extensions.patch
+chromium chromium-ungoogled-disable-missing-key-warning.patch
+chromium chromium-ungoogled-mime-util-ymp.patch
+chromium chromium-extension-tab-move-closing-window.patch
+chromium chromium-webstore-icon-optional.patch
+chromium chromium-ardia-layer.patch
+layer engine/chromium-win
+layer engine/ardiacore-win

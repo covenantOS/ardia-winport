@@ -1,0 +1,171 @@
+Windows keeps only the portable compositor API and mojom plumbing; every behavioral addition is macOS-gated.
+
+--- a/components/viz/service/display/display.cc
++++ b/components/viz/service/display/display.cc
+@@ -512,6 +512,21 @@
+     aggregator_->SetDisplayColorSpaces(display_color_spaces_);
+ }
+ 
++#if BUILDFLAG(IS_MAC)
++void Display::SetVideoSuperResolutionAllowed(bool allowed) {
++  if (allowed == video_super_resolution_allowed_) {
++    return;
++  }
++  video_super_resolution_allowed_ = allowed;
++  if (aggregator_ && current_surface_id_.is_valid()) {
++    aggregator_->SetFullDamageForSurface(current_surface_id_);
++  }
++  if (damage_tracker_) {
++    damage_tracker_->SetRootSurfaceDamaged();
++  }
++}
++#endif
++
+ void Display::SetOutputIsSecure(bool secure) {
+   if (secure == output_is_secure_)
+     return;
+@@ -1120,6 +1135,8 @@
+ #if BUILDFLAG(IS_MAC)
+     swap_frame_data.frame_data.is_handling_interaction = has_interactive_frame;
+     swap_frame_data.frame_data.is_handling_animation = has_animated_frame;
++    swap_frame_data.frame_data.video_super_resolution_allowed =
++        video_super_resolution_allowed_;
+ #endif
+ 
+     // We must notify scheduler and increase |pending_swaps_| before calling
+--- a/components/viz/service/display/display.h
++++ b/components/viz/service/display/display.h
+@@ -149,6 +149,9 @@
+   void SetDisplayColorSpaces(
+       const gfx::DisplayColorSpaces& display_color_spaces);
+   void SetOutputIsSecure(bool secure);
++#if BUILDFLAG(IS_MAC)
++  void SetVideoSuperResolutionAllowed(bool allowed);
++#endif
+   void NotifyMinSupportedVsyncInterval(base::TimeDelta min_vsync_interval);
+ 
+   const SurfaceId& CurrentSurfaceId() const;
+@@ -309,6 +312,9 @@
+   gfx::DisplayColorSpaces display_color_spaces_;
+   mojom::DisplayVisibility visibility_ = mojom::DisplayVisibility::kInvisible;
+   bool output_is_secure_ = false;
++#if BUILDFLAG(IS_MAC)
++  bool video_super_resolution_allowed_ = false;
++#endif
+ 
+ #if DCHECK_IS_ON()
+   std::unique_ptr<gpu::ScopedAllowScheduleGpuTask>
+--- a/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.cc
++++ b/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.cc
+@@ -382,7 +382,13 @@
+ 
+ void RootCompositorFrameSinkImpl::SetOutputIsSecure(bool secure) {
+   display_->SetOutputIsSecure(secure);
++}
++
++#if BUILDFLAG(IS_MAC)
++void RootCompositorFrameSinkImpl::SetVideoSuperResolutionAllowed(bool allowed) {
++  display_->SetVideoSuperResolutionAllowed(allowed);
+ }
++#endif
+ 
+ void RootCompositorFrameSinkImpl::SetDisplayVSyncParameters(
+     base::TimeTicks timebase,
+--- a/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h
++++ b/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h
+@@ -83,6 +83,9 @@
+   void SetVSyncDisplayID(int64_t display_id) override;
+ #endif
+   void SetOutputIsSecure(bool secure) override;
++#if BUILDFLAG(IS_MAC)
++  void SetVideoSuperResolutionAllowed(bool allowed) override;
++#endif
+   void SetDisplayVSyncParameters(base::TimeTicks timebase,
+                                  base::TimeDelta interval) override;
+   void ForceImmediateDrawAndSwapIfPossible() override;
+--- a/content/public/browser/render_widget_host_view.h
++++ b/content/public/browser/render_widget_host_view.h
+@@ -356,6 +356,8 @@
+ 
+   // Sets whether the view should evict its saved compositor frame when hidden.
+   virtual void SetEvictOnHide(bool evict_on_hide) = 0;
++
++  virtual void SetVideoSuperResolutionAllowed(bool allowed) {}
+ };
+ 
+ }  // namespace content
+--- a/services/viz/privileged/mojom/compositing/display_private.mojom
++++ b/services/viz/privileged/mojom/compositing/display_private.mojom
+@@ -59,6 +59,9 @@
+   SetDisplayColorSpaces(gfx.mojom.DisplayColorSpaces display_color_spaces);
+   SetOutputIsSecure(bool secure);
+ 
++  [EnableIf=is_mac]
++  SetVideoSuperResolutionAllowed(bool allowed);
++
+   // Sets CGDirectDisplayID for GPU begin frame source.
+   [EnableIf=is_mac]
+   SetVSyncDisplayID(int64 display_id);
+--- a/ui/compositor/compositor.cc
++++ b/ui/compositor/compositor.cc
+@@ -368,6 +368,8 @@
+     display_private_->SetOutputIsSecure(output_is_secure_);
+ #if BUILDFLAG(IS_MAC)
+     display_private_->SetVSyncDisplayID(display_id_);
++    display_private_->SetVideoSuperResolutionAllowed(
++        video_super_resolution_allowed_);
+ #endif
+     if (has_vsync_params_) {
+       display_private_->SetDisplayVSyncParameters(vsync_timebase_,
+@@ -989,7 +991,19 @@
+   output_is_secure_ = output_is_secure;
+   if (display_private_)
+     display_private_->SetOutputIsSecure(output_is_secure);
++}
++
++#if BUILDFLAG(IS_MAC)
++void Compositor::SetVideoSuperResolutionAllowed(bool allowed) {
++  if (allowed == video_super_resolution_allowed_) {
++    return;
++  }
++  video_super_resolution_allowed_ = allowed;
++  if (display_private_) {
++    display_private_->SetVideoSuperResolutionAllowed(allowed);
++  }
+ }
++#endif
+ 
+ const cc::LayerTreeDebugState& Compositor::GetLayerTreeDebugState() const {
+   return host_->GetDebugState();
+--- a/ui/compositor/compositor.h
++++ b/ui/compositor/compositor.h
+@@ -461,6 +461,9 @@
+ 
+   bool output_is_secure() const { return output_is_secure_; }
+   void SetOutputIsSecure(bool output_is_secure);
++#if BUILDFLAG(IS_MAC)
++  void SetVideoSuperResolutionAllowed(bool allowed);
++#endif
+ 
+   const cc::LayerTreeDebugState& GetLayerTreeDebugState() const;
+   void SetLayerTreeDebugState(const cc::LayerTreeDebugState& debug_state);
+@@ -687,6 +690,9 @@
+   gfx::DisplayColorSpaces display_color_spaces_;
+ 
+   bool output_is_secure_ = false;
++#if BUILDFLAG(IS_MAC)
++  bool video_super_resolution_allowed_ = false;
++#endif
+ 
+   // If true, all paint commands are recorded at pixel size instead of DIP.
+   const bool is_pixel_canvas_;
+--- a/ui/gfx/frame_data.h
++++ b/ui/gfx/frame_data.h
+@@ -46,6 +46,7 @@
+ #if BUILDFLAG(IS_MAC)
+   bool is_handling_interaction = false;
+   bool is_handling_animation = false;
++  bool video_super_resolution_allowed = false;
+ #endif
+ };
+ 
